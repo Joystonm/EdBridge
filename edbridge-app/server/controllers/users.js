@@ -8,6 +8,12 @@ const ErrorResponse = require('../utils/errorResponse');
 exports.register = asyncHandler(async (req, res, next) => {
   const { name, email, password, role } = req.body;
   
+  // Check if user already exists
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return next(new ErrorResponse('Email already in use', 400));
+  }
+  
   // Create user
   const user = await User.create({
     name,
@@ -117,6 +123,12 @@ const sendTokenResponse = (user, statusCode, res) => {
     .cookie('token', token, options)
     .json({
       success: true,
-      token
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
     });
 };

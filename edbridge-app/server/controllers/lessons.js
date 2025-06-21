@@ -6,7 +6,7 @@ const ErrorResponse = require('../utils/errorResponse');
 // @route   GET /api/lessons
 // @access  Private
 exports.getLessons = asyncHandler(async (req, res, next) => {
-  const lessons = await Lesson.find({ user: req.user.id });
+  const lessons = await Lesson.find({ user: req.user.id }).sort({ createdAt: -1 });
   
   res.status(200).json({
     success: true,
@@ -96,7 +96,7 @@ exports.deleteLesson = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(`User not authorized to delete this lesson`, 401));
   }
   
-  await lesson.remove();
+  await Lesson.findByIdAndDelete(req.params.id);
   
   res.status(200).json({
     success: true,

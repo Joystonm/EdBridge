@@ -7,19 +7,10 @@ class TavilyService {
   constructor() {
     this.apiKey = process.env.TAVILY_API_KEY;
     this.baseURL = 'https://api.tavily.com/v1';
-  }
-
-  /**
-   * Initialize the API client with authentication
-   */
-  getClient() {
-    return axios.create({
-      baseURL: this.baseURL,
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    
+    if (!this.apiKey) {
+      console.error('TAVILY_API_KEY is not set in environment variables');
+    }
   }
 
   /**
@@ -34,40 +25,51 @@ class TavilyService {
       searchQuery += ` ${resourceType}`;
     }
     
+    console.log(`Searching Tavily for: "${searchQuery}"`);
+    
     try {
-      const client = this.getClient();
-      const response = await client.post('/search', {
+      const response = await axios.post(`${this.baseURL}/search`, {
+        api_key: this.apiKey,
         query: searchQuery,
-        search_depth: 'advanced',
+        search_depth: "advanced",
         include_domains: [
-          'khanacademy.org',
-          'teacherspayteachers.com',
-          'edutopia.org',
-          'education.com',
-          'pbslearningmedia.org',
-          'lessonplanet.com',
-          'teachingchannel.org',
-          'readwritethink.org',
-          'commonlit.org',
-          'youtube.com',
-          'ted.com',
-          'nationalgeographic.com',
-          'nasa.gov',
-          'brainpop.com',
-          'scholastic.com',
-          'discoveryeducation.com'
+          "khanacademy.org",
+          "teacherspayteachers.com",
+          "edutopia.org",
+          "education.com",
+          "pbslearningmedia.org",
+          "lessonplanet.com",
+          "teachingchannel.org",
+          "readwritethink.org",
+          "commonlit.org",
+          "youtube.com",
+          "ted.com",
+          "nationalgeographic.com",
+          "nasa.gov",
+          "brainpop.com",
+          "scholastic.com",
+          "discoveryeducation.com"
         ],
         max_results: maxResults || 5
       });
       
+      console.log('Tavily API response received:', response.status);
+      
       if (response.data && response.data.results) {
-        return this.formatSearchResults(response.data.results, resourceType);
+        const formattedResults = this.formatSearchResults(response.data.results, resourceType);
+        console.log(`Found ${formattedResults.length} resources`);
+        return formattedResults;
       }
       
-      return [];
+      console.log('No results found from Tavily');
+      // Return some default resources if Tavily doesn't return any
+      return this.getDefaultResources(topic);
     } catch (error) {
-      console.error('Error calling Tavily API for resource search:', error);
-      throw new Error('Failed to search for educational resources');
+      console.error('Error calling Tavily API:', error.response ? error.response.data : error.message);
+      
+      // Return default resources instead of empty array
+      console.log('Returning default resources due to Tavily API error');
+      return this.getDefaultResources(topic);
     }
   }
 
@@ -95,17 +97,22 @@ class TavilyService {
                 result.url.includes('infographic')) {
         type = 'image';
       } else if (resourceType && resourceType !== 'all') {
-        type = resourceType;
+        // Make sure we only use valid enum values
+        if (['video', 'article', 'interactive', 'image', 'document', 'other'].includes(resourceType)) {
+          type = resourceType;
+        } else {
+          type = 'other';
+        }
       }
       
       // Clean up and format the title
-      let title = result.title;
+      let title = result.title || 'Resource';
       if (title.length > 100) {
         title = title.substring(0, 97) + '...';
       }
       
       // Clean up and format the description
-      let description = result.content;
+      let description = result.content || 'No description available';
       if (description.length > 200) {
         // Try to find a sentence break near 200 characters
         const sentenceBreak = description.substring(150, 250).search(/[.!?]/);
@@ -124,6 +131,50 @@ class TavilyService {
         type: type
       };
     });
+  }
+
+  /**
+   * Get default resources when Tavily API fails or returns no results
+   */
+  getDefaultResources(topic) {
+    const cleanTopic = encodeURIComponent(topic);
+    return [
+      {
+        title: `Khan Academy: ${topic}`,
+        description: `Learn about ${topic} with Khan Academy's comprehensive lessons and practice exercises.`,
+        url: `https://www.khanacademy.org/search?page_search_query=${cleanTopic}`,
+        source: 'khanacademy.org',
+        type: 'interactive'
+      },
+      {
+        title: `YouTube Educational Videos on ${topic}`,
+        description: `Watch educational videos about ${topic} from various creators and educational channels.`,
+        url: `https://www.youtube.com/results?search_query=${cleanTopic}+educational`,
+        source: 'youtube.com',
+        type: 'video'
+      },
+      {
+        title: `National Geographic: ${topic}`,
+        description: `Explore ${topic} through National Geographic's educational resources and articles.`,
+        url: `https://www.nationalgeographic.com/search?q=${cleanTopic}`,
+        source: 'nationalgeographic.com',
+        type: 'article'
+      },
+      {
+        title: `PBS Learning Media: ${topic}`,
+        description: `Access PBS Learning Media's collection of educational resources about ${topic}.`,
+        url: `https://www.pbslearningmedia.org/search/?q=${cleanTopic}`,
+        source: 'pbslearningmedia.org',
+        type: 'video'
+      },
+      {
+        title: `Teachers Pay Teachers: ${topic} Resources`,
+        description: `Find teacher-created resources, worksheets, and activities for teaching ${topic}.`,
+        url: `https://www.teacherspayteachers.com/Browse/Search:${cleanTopic}`,
+        source: 'teacherspayteachers.com',
+        type: 'document'
+      }
+    ];
   }
 }
 

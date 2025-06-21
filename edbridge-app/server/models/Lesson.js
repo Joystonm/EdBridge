@@ -51,7 +51,7 @@ const LessonSchema = new mongoose.Schema({
       url: String,
       type: {
         type: String,
-        enum: ['video', 'article', 'interactive', 'image', 'other'],
+        enum: ['video', 'article', 'interactive', 'image', 'document', 'other'],
         default: 'other'
       }
     }
