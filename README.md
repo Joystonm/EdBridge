@@ -16,7 +16,7 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
 - **Frontend**: React.js with Tailwind CSS
 - **Backend**: Node.js with Express
 - **Database**: MongoDB
-- **External APIs**: 
+- **External APIs**:
   - Groq (LLM for content generation)
   - Tavily (Search API for educational resources)
 - **Authentication**: JWT
@@ -33,12 +33,14 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
 ### Installation
 
 1. Clone the repository
+
    ```
-   git clone https://github.com/yourusername/edbridge-app.git
+   git clone https://github.com/Joystonm/edbridge-app.git
    cd edbridge-app
    ```
 
 2. Install server dependencies
+
    ```
    cd server
    npm install
@@ -46,6 +48,7 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
    ```
 
 3. Install client dependencies
+
    ```
    cd ../client
    npm install
@@ -58,12 +61,14 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
 ### Running the Application
 
 1. Start the server
+
    ```
    cd server
    npm run dev
    ```
 
 2. Start the client
+
    ```
    cd client
    npm run dev
@@ -74,12 +79,14 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
 ## 📋 How EdBridge Works
 
 ### Step 1: Input from Teacher
+
 - Teacher enters:
   - Topic (e.g., "Photosynthesis")
   - Grade Level (e.g., "7th")
   - Subject (e.g., "Biology")
 
 ### Step 2: AI Processing
+
 - **Groq AI**:
   - Summarizes the topic in grade-appropriate language
   - Generates 3-5 quiz questions with answers
@@ -91,6 +98,7 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
   - Discovers interactive resources
 
 ### Step 3: Output to Dashboard
+
 - Displays results in an organized, tabbed interface
 - Options to:
   - Save to user dashboard
@@ -102,6 +110,7 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
 **Teacher Input**: "I'm teaching Photosynthesis to 7th grade science students tomorrow."
 
 **EdBridge Output**:
+
 - **Explanation**: Clear paragraph explaining how plants make food using sunlight, water, and carbon dioxide
 - **Quiz Questions**:
   - What gas do plants take in during photosynthesis?
@@ -120,12 +129,3 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
 - Analytics dashboard for tracking usage and performance
 - Voice input for conversational lesson creation
 - Integration with popular LMS platforms
-
-## 📄 License
-
-[MIT License](LICENSE)
-
-## 🙏 Acknowledgments
-
-- Groq API for providing the LLM capabilities
-- Tavily API for the search functionality
