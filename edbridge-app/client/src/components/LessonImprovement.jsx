@@ -1,34 +1,54 @@
 import React, { useState } from 'react';
-import { FaLightbulb, FaSpinner } from 'react-icons/fa';
+import { FaLightbulb, FaSpinner, FaBug } from 'react-icons/fa';
+import axiosInstance from '../utils/axiosConfig';
 
 const LessonImprovement = ({ lessonId }) => {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState(null);
   const [error, setError] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
+  const [debugMode, setDebugMode] = useState(false);
+  const [rawResponse, setRawResponse] = useState(null);
 
   const getSuggestions = async () => {
     setLoading(true);
     setError('');
+    setRawResponse(null);
     
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/ai/improve-lesson', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ lessonId })
-      });
+      const response = await axiosInstance.post('/ai/improve-lesson', { lessonId });
       
-      const data = await response.json();
+      // Store raw response for debugging
+      setRawResponse(response.data);
       
-      if (response.ok) {
-        setSuggestions(data.data);
-        setActiveCategory('contentEnhancement');
+      if (response.data.success) {
+        const suggestionData = response.data.data;
+        console.log('Suggestion data:', suggestionData);
+        
+        // Check if we have valid suggestion data
+        if (suggestionData && typeof suggestionData === 'object') {
+          setSuggestions(suggestionData);
+          
+          // Find the first category that has content
+          const categories = [
+            'contentEnhancement', 'learningOutcomes', 'activities', 
+            'assessment', 'realWorldRelevance', 'differentiation', 
+            'technologyIntegration'
+          ];
+          
+          const firstValidCategory = categories.find(cat => 
+            suggestionData[cat] && 
+            (typeof suggestionData[cat] === 'string' || 
+             Array.isArray(suggestionData[cat]) || 
+             typeof suggestionData[cat] === 'object')
+          ) || 'contentEnhancement';
+          
+          setActiveCategory(firstValidCategory);
+        } else {
+          setError('Received invalid suggestion data from the server');
+        }
       } else {
-        setError(data.message || 'Failed to get improvement suggestions');
+        setError(response.data.message || 'Failed to get improvement suggestions');
       }
     } catch (error) {
       console.error('Error getting improvement suggestions:', error);
@@ -48,6 +68,41 @@ const LessonImprovement = ({ lessonId }) => {
     { id: 'technologyIntegration', label: 'Technology Integration', icon: '💻' }
   ];
 
+  // Function to render suggestion content based on its type
+  const renderSuggestionContent = (content) => {
+    if (!content) {
+      return <p>No specific suggestions available for this category.</p>;
+    }
+    
+    if (typeof content === 'string') {
+      return <p>{content}</p>;
+    }
+    
+    if (Array.isArray(content)) {
+      return (
+        <ul className="list-disc pl-5 space-y-2">
+          {content.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      );
+    }
+    
+    if (typeof content === 'object') {
+      return (
+        <ul className="list-disc pl-5 space-y-2">
+          {Object.entries(content).map(([key, value], index) => (
+            <li key={index}>
+              <strong>{key}:</strong> {value}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    
+    return <p>No specific suggestions available for this category.</p>;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="p-4 bg-primary-50 border-b border-primary-100 flex justify-between items-center">
@@ -56,14 +111,24 @@ const LessonImprovement = ({ lessonId }) => {
           <h3 className="text-lg font-semibold">Lesson Improvement Suggestions</h3>
         </div>
         
-        {!suggestions && !loading && (
+        <div className="flex items-center">
+          {!suggestions && !loading && (
+            <button 
+              onClick={getSuggestions}
+              className="btn btn-primary py-2 px-4 text-sm"
+            >
+              Get Suggestions
+            </button>
+          )}
+          
           <button 
-            onClick={getSuggestions}
-            className="btn btn-primary py-2 px-4 text-sm"
+            onClick={() => setDebugMode(!debugMode)}
+            className="ml-2 text-gray-500 hover:text-gray-700"
+            title="Toggle Debug Mode"
           >
-            Get Suggestions
+            <FaBug />
           </button>
-        )}
+        </div>
       </div>
 
       {loading && (
@@ -77,6 +142,15 @@ const LessonImprovement = ({ lessonId }) => {
       {error && (
         <div className="p-4 bg-red-50 text-red-700">
           <p>{error}</p>
+        </div>
+      )}
+
+      {debugMode && rawResponse && (
+        <div className="p-4 bg-gray-100 border-b border-gray-200">
+          <h4 className="font-mono text-sm font-bold mb-2">Debug Information:</h4>
+          <pre className="text-xs overflow-auto max-h-60 bg-gray-800 text-gray-100 p-2 rounded">
+            {JSON.stringify(rawResponse, null, 2)}
+          </pre>
         </div>
       )}
 
@@ -103,21 +177,7 @@ const LessonImprovement = ({ lessonId }) => {
               {categories.find(c => c.id === activeCategory)?.label} Suggestions
             </h4>
             <div className="prose max-w-none">
-              {suggestions[activeCategory] ? (
-                typeof suggestions[activeCategory] === 'string' ? (
-                  <p>{suggestions[activeCategory]}</p>
-                ) : Array.isArray(suggestions[activeCategory]) ? (
-                  <ul className="list-disc pl-5 space-y-2">
-                    {suggestions[activeCategory].map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No specific suggestions available for this category.</p>
-                )
-              ) : (
-                <p>No specific suggestions available for this category.</p>
-              )}
+              {renderSuggestionContent(suggestions[activeCategory])}
             </div>
           </div>
         </div>

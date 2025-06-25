@@ -60,6 +60,39 @@ const LessonSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  homework: [
+    {
+      title: String,
+      description: String,
+      type: {
+        type: String,
+        enum: ['mcq', 'short_answer', 'diagram', 'creative', 'other'],
+        default: 'other'
+      },
+      questions: [
+        {
+          question: String,
+          type: {
+            type: String,
+            enum: ['mcq', 'short_answer', 'diagram', 'creative', 'other'],
+            default: 'other'
+          },
+          options: [String], // For MCQs
+          answer: String, // For MCQs and short answers
+          explanation: String,
+          points: {
+            type: Number,
+            default: 1
+          }
+        }
+      ],
+      dueDate: Date,
+      totalPoints: {
+        type: Number,
+        default: 0
+      }
+    }
+  ],
   additionalNotes: {
     type: String,
     default: ''
@@ -78,5 +111,7 @@ const LessonSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+module.exports = mongoose.model('Lesson', LessonSchema);
 
 module.exports = mongoose.model('Lesson', LessonSchema);

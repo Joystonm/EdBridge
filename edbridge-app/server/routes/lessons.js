@@ -5,7 +5,11 @@ const {
   getLesson, 
   createLesson, 
   updateLesson, 
-  deleteLesson 
+  deleteLesson,
+  getHomework,
+  getSingleHomework,
+  updateHomework,
+  deleteHomework
 } = require('../controllers/lessons');
 const { protect } = require('../middleware/auth');
 
@@ -19,5 +23,15 @@ router
   .get(protect, getLesson)
   .put(protect, updateLesson)
   .delete(protect, deleteLesson);
+
+router
+  .route('/:id/homework')
+  .get(protect, getHomework);
+
+router
+  .route('/:id/homework/:homeworkId')
+  .get(protect, getSingleHomework)
+  .put(protect, updateHomework)
+  .delete(protect, deleteHomework);
 
 module.exports = router;

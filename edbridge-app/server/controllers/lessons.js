@@ -103,3 +103,127 @@ exports.deleteLesson = asyncHandler(async (req, res, next) => {
     data: {}
   });
 });
+
+// @desc    Get homework for a lesson
+// @route   GET /api/lessons/:id/homework
+// @access  Private
+exports.getHomework = asyncHandler(async (req, res, next) => {
+  const lesson = await Lesson.findById(req.params.id);
+  
+  if (!lesson) {
+    return next(new ErrorResponse(`Lesson not found with id of ${req.params.id}`, 404));
+  }
+  
+  // Make sure user owns the lesson
+  if (lesson.user.toString() !== req.user.id) {
+    return next(new ErrorResponse(`User not authorized to access this lesson`, 401));
+  }
+  
+  res.status(200).json({
+    success: true,
+    count: lesson.homework ? lesson.homework.length : 0,
+    data: lesson.homework || []
+  });
+});
+
+// @desc    Get single homework assignment
+// @route   GET /api/lessons/:id/homework/:homeworkId
+// @access  Private
+exports.getSingleHomework = asyncHandler(async (req, res, next) => {
+  const lesson = await Lesson.findById(req.params.id);
+  
+  if (!lesson) {
+    return next(new ErrorResponse(`Lesson not found with id of ${req.params.id}`, 404));
+  }
+  
+  // Make sure user owns the lesson
+  if (lesson.user.toString() !== req.user.id) {
+    return next(new ErrorResponse(`User not authorized to access this lesson`, 401));
+  }
+  
+  // Find the homework assignment
+  const homework = lesson.homework ? lesson.homework.id(req.params.homeworkId) : null;
+  
+  if (!homework) {
+    return next(new ErrorResponse(`Homework not found with id of ${req.params.homeworkId}`, 404));
+  }
+  
+  res.status(200).json({
+    success: true,
+    data: homework
+  });
+});
+
+// @desc    Update homework assignment
+// @route   PUT /api/lessons/:id/homework/:homeworkId
+// @access  Private
+exports.updateHomework = asyncHandler(async (req, res, next) => {
+  let lesson = await Lesson.findById(req.params.id);
+  
+  if (!lesson) {
+    return next(new ErrorResponse(`Lesson not found with id of ${req.params.id}`, 404));
+  }
+  
+  // Make sure user owns the lesson
+  if (lesson.user.toString() !== req.user.id) {
+    return next(new ErrorResponse(`User not authorized to update this lesson`, 401));
+  }
+  
+  // Find the homework assignment
+  const homework = lesson.homework ? lesson.homework.id(req.params.homeworkId) : null;
+  
+  if (!homework) {
+    return next(new ErrorResponse(`Homework not found with id of ${req.params.homeworkId}`, 404));
+  }
+  
+  // Update the homework fields
+  Object.keys(req.body).forEach(key => {
+    homework[key] = req.body[key];
+  });
+  
+  // Update timestamp
+  lesson.updatedAt = Date.now();
+  
+  await lesson.save();
+  
+  res.status(200).json({
+    success: true,
+    data: homework
+  });
+});
+
+// @desc    Delete homework assignment
+// @route   DELETE /api/lessons/:id/homework/:homeworkId
+// @access  Private
+exports.deleteHomework = asyncHandler(async (req, res, next) => {
+  const lesson = await Lesson.findById(req.params.id);
+  
+  if (!lesson) {
+    return next(new ErrorResponse(`Lesson not found with id of ${req.params.id}`, 404));
+  }
+  
+  // Make sure user owns the lesson
+  if (lesson.user.toString() !== req.user.id) {
+    return next(new ErrorResponse(`User not authorized to delete this homework`, 401));
+  }
+  
+  // Find the homework assignment
+  const homework = lesson.homework ? lesson.homework.id(req.params.homeworkId) : null;
+  
+  if (!homework) {
+    return next(new ErrorResponse(`Homework not found with id of ${req.params.homeworkId}`, 404));
+  }
+  
+  // Remove the homework
+  homework.remove();
+  
+  // Update timestamp
+  lesson.updatedAt = Date.now();
+  
+  await lesson.save();
+  
+  res.status(200).json({
+    success: true,
+    data: {}
+  });
+});

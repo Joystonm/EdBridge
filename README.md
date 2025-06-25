@@ -6,6 +6,7 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
 
 - **AI-Powered Lesson Generation**: Create complete lesson plans with explanations, activities, and assessments
 - **Auto-Generated Quizzes**: Get grade-appropriate assessment questions with answer explanations
+- **AI-Powered Homework Generator**: Create customized homework assignments with multiple question types (MCQs, short answers, diagram-based questions, and creative prompts)
 - **Real-World Examples**: Connect classroom concepts to current events and applications
 - **Resource Discovery**: Find relevant educational videos, articles, and interactive content
 - **Time-Saving**: Create complete lesson materials in minutes instead of hours
@@ -92,6 +93,7 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
   - Generates 3-5 quiz questions with answers
   - Creates activity/experiment suggestions
   - Provides key learning outcomes
+  - Generates customized homework assignments
 - **Tavily API**:
   - Pulls live, real-world examples related to the topic
   - Finds relevant educational videos and articles
@@ -115,6 +117,11 @@ EdBridge is an AI-powered platform that helps teachers create, enhance, and pers
 - **Quiz Questions**:
   - What gas do plants take in during photosynthesis?
   - Which part of the plant absorbs sunlight?
+- **Homework Assignment**:
+  - Multiple-choice questions about photosynthesis process
+  - Short answer questions about plant structures
+  - Diagram labeling activity for chloroplast parts
+  - Creative prompt to design an experiment
 - **Activities**:
   - Perform a leaf starch test
   - Create a diagram showing the photosynthesis process

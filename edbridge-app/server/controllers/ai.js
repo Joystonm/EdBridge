@@ -222,24 +222,110 @@ exports.improveLessonSuggestions = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse(`User not authorized to access this lesson`, 401));
     }
     
+    console.log(`Generating improvement suggestions for lesson: ${lessonId}`);
+    
     // Generate improvement suggestions using Groq
-    const suggestions = await groqService.generateLessonImprovements({
+    try {
+      const suggestions = await groqService.generateLessonImprovements({
+        topic: lesson.topic,
+        subject: lesson.subject,
+        gradeLevel: lesson.gradeLevel,
+        explanation: lesson.explanation,
+        learningOutcomes: lesson.learningOutcomes,
+        activities: lesson.activities,
+        quiz: lesson.quiz,
+        realWorldExamples: lesson.realWorldExamples
+      });
+      
+      console.log('Successfully generated improvement suggestions');
+      
+      res.status(200).json({
+        success: true,
+        data: suggestions
+      });
+    } catch (aiError) {
+      console.error('Error from Groq service:', aiError);
+      
+      // Provide fallback suggestions if AI service fails
+      const fallbackSuggestions = {
+        contentEnhancement: "Consider adding more detailed explanations and examples that connect to students' prior knowledge. Use visual aids and analogies to make complex concepts more accessible.",
+        learningOutcomes: "Make learning outcomes more specific, measurable, and aligned with curriculum standards. Include outcomes that address different cognitive levels.",
+        activities: "Incorporate more hands-on, inquiry-based activities that promote active learning. Include collaborative group work that encourages peer discussion.",
+        assessment: "Include a variety of assessment types beyond multiple-choice questions. Add formative assessments throughout the lesson to check for understanding.",
+        realWorldRelevance: "Connect the topic to current events or issues that students can relate to. Include examples from different cultural contexts to make the content more inclusive.",
+        differentiation: "Provide options for visual, auditory, and kinesthetic learners. Create tiered assignments that allow students to work at their appropriate challenge level.",
+        technologyIntegration: "Incorporate educational apps or online tools that enhance the learning experience. Use digital collaboration tools to facilitate group work."
+      };
+      
+      res.status(200).json({
+        success: true,
+        data: fallbackSuggestions,
+        note: "These are fallback suggestions as the AI service encountered an error."
+      });
+    }
+  } catch (error) {
+    console.error('Error in improveLessonSuggestions controller:', error);
+    return next(new ErrorResponse('Error generating improvement suggestions', 500));
+  }
+});
+// @desc    Generate homework assignment for an existing lesson
+// @route   POST /api/ai/generate-homework
+// @access  Private
+exports.generateHomework = asyncHandler(async (req, res, next) => {
+  const { 
+    lessonId, 
+    questionTypes = ['mcq', 'short_answer', 'diagram', 'creative'], 
+    numberOfQuestions = 10, 
+    difficulty = 'medium',
+    dueDate
+  } = req.body;
+  
+  if (!lessonId) {
+    return next(new ErrorResponse('Please provide a lesson ID', 400));
+  }
+  
+  try {
+    // Find the lesson
+    const lesson = await Lesson.findById(lessonId);
+    
+    if (!lesson) {
+      return next(new ErrorResponse(`Lesson not found with id of ${lessonId}`, 404));
+    }
+    
+    // Make sure user owns the lesson
+    if (lesson.user.toString() !== req.user.id) {
+      return next(new ErrorResponse(`User not authorized to modify this lesson`, 401));
+    }
+    
+    // Generate homework assignment using Groq
+    const homeworkAssignment = await groqService.generateHomework({
       topic: lesson.topic,
       subject: lesson.subject,
       gradeLevel: lesson.gradeLevel,
       explanation: lesson.explanation,
       learningOutcomes: lesson.learningOutcomes,
-      activities: lesson.activities,
-      quiz: lesson.quiz,
-      realWorldExamples: lesson.realWorldExamples
+      questionTypes,
+      numberOfQuestions,
+      difficulty
     });
+    
+    // Add due date if provided
+    if (dueDate) {
+      homeworkAssignment.dueDate = new Date(dueDate);
+    }
+    
+    // Add the homework assignment to the lesson
+    lesson.homework = lesson.homework || [];
+    lesson.homework.push(homeworkAssignment);
+    lesson.updatedAt = Date.now();
+    await lesson.save();
     
     res.status(200).json({
       success: true,
-      data: suggestions
+      data: homeworkAssignment
     });
   } catch (error) {
-    console.error('Error generating improvement suggestions:', error);
-    return next(new ErrorResponse('Error generating improvement suggestions', 500));
+    console.error('Error generating homework assignment:', error);
+    return next(new ErrorResponse('Error generating homework assignment', 500));
   }
 });

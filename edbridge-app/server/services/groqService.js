@@ -207,10 +207,23 @@ class GroqService {
       6. Differentiation: Suggestions for adapting this lesson for different learning styles or abilities
       7. Technology Integration: Ideas for incorporating educational technology
       
-      Format your response as a JSON object with these categories as keys and detailed suggestions as values.
+      For each category, provide at least 3-5 specific, actionable suggestions.
+      
+      Format your response as a JSON object with these categories as keys and detailed suggestions as string values.
+      The JSON structure should be:
+      {
+        "contentEnhancement": "Detailed suggestions for content enhancement...",
+        "learningOutcomes": "Detailed suggestions for learning outcomes...",
+        "activities": "Detailed suggestions for activities...",
+        "assessment": "Detailed suggestions for assessment...",
+        "realWorldRelevance": "Detailed suggestions for real-world relevance...",
+        "differentiation": "Detailed suggestions for differentiation...",
+        "technologyIntegration": "Detailed suggestions for technology integration..."
+      }
     `;
     
     try {
+      console.log('Generating lesson improvement suggestions...');
       const client = this.getClient();
       const response = await client.post('/chat/completions', {
         model: this.model,
@@ -224,25 +237,159 @@ class GroqService {
       });
       
       const content = this.parseResponse(response.data);
+      console.log('Received improvement suggestions response');
       
       try {
         // Parse the JSON content
-        return JSON.parse(content);
+        const parsedContent = JSON.parse(content);
+        console.log('Successfully parsed improvement suggestions JSON');
+        
+        // Ensure all expected categories are present
+        const defaultSuggestions = {
+          contentEnhancement: "Consider adding more detailed explanations and examples that connect to students' prior knowledge. Use visual aids and analogies to make complex concepts more accessible. Break down the topic into smaller, manageable chunks for better comprehension.",
+          learningOutcomes: "Make learning outcomes more specific, measurable, and aligned with curriculum standards. Include outcomes that address different cognitive levels (remembering, understanding, applying, analyzing, evaluating, creating). Ensure outcomes are clearly communicated to students.",
+          activities: "Incorporate more hands-on, inquiry-based activities that promote active learning. Include collaborative group work that encourages peer discussion and knowledge sharing. Add activities that cater to different learning styles and abilities.",
+          assessment: "Include a variety of assessment types beyond multiple-choice questions. Add formative assessments throughout the lesson to check for understanding. Create rubrics for evaluating student work that align with learning outcomes.",
+          realWorldRelevance: "Connect the topic to current events or issues that students can relate to. Include examples from different cultural contexts to make the content more inclusive. Show how the knowledge can be applied to solve real-world problems.",
+          differentiation: "Provide options for visual, auditory, and kinesthetic learners. Create tiered assignments that allow students to work at their appropriate challenge level. Offer choice in how students demonstrate their learning.",
+          technologyIntegration: "Incorporate educational apps or online tools that enhance the learning experience. Use digital collaboration tools to facilitate group work. Consider using multimedia resources to explain complex concepts."
+        };
+        
+        // Merge with default suggestions for any missing categories
+        const mergedSuggestions = {
+          ...defaultSuggestions,
+          ...parsedContent
+        };
+        
+        return mergedSuggestions;
       } catch (error) {
         console.error('Error parsing JSON improvement suggestions:', error);
+        console.log('Raw content:', content);
+        
+        // Return default suggestions if parsing fails
         return {
-          contentEnhancement: "Consider adding more detailed explanations and examples.",
-          learningOutcomes: "Make learning outcomes more specific and measurable.",
-          activities: "Add more interactive and hands-on activities.",
-          assessment: "Include a variety of question types in your assessment.",
-          realWorldRelevance: "Connect the topic to current events or students' daily lives.",
-          differentiation: "Provide options for visual, auditory, and kinesthetic learners.",
-          technologyIntegration: "Consider incorporating educational apps or online resources."
+          contentEnhancement: "Consider adding more detailed explanations and examples that connect to students' prior knowledge. Use visual aids and analogies to make complex concepts more accessible. Break down the topic into smaller, manageable chunks for better comprehension.",
+          learningOutcomes: "Make learning outcomes more specific, measurable, and aligned with curriculum standards. Include outcomes that address different cognitive levels (remembering, understanding, applying, analyzing, evaluating, creating). Ensure outcomes are clearly communicated to students.",
+          activities: "Incorporate more hands-on, inquiry-based activities that promote active learning. Include collaborative group work that encourages peer discussion and knowledge sharing. Add activities that cater to different learning styles and abilities.",
+          assessment: "Include a variety of assessment types beyond multiple-choice questions. Add formative assessments throughout the lesson to check for understanding. Create rubrics for evaluating student work that align with learning outcomes.",
+          realWorldRelevance: "Connect the topic to current events or issues that students can relate to. Include examples from different cultural contexts to make the content more inclusive. Show how the knowledge can be applied to solve real-world problems.",
+          differentiation: "Provide options for visual, auditory, and kinesthetic learners. Create tiered assignments that allow students to work at their appropriate challenge level. Offer choice in how students demonstrate their learning.",
+          technologyIntegration: "Incorporate educational apps or online tools that enhance the learning experience. Use digital collaboration tools to facilitate group work. Consider using multimedia resources to explain complex concepts."
         };
       }
     } catch (error) {
       console.error('Error calling Groq API for lesson improvements:', error);
-      throw new Error('Failed to generate lesson improvement suggestions');
+      
+      // Return default suggestions if API call fails
+      return {
+        contentEnhancement: "Consider adding more detailed explanations and examples that connect to students' prior knowledge. Use visual aids and analogies to make complex concepts more accessible. Break down the topic into smaller, manageable chunks for better comprehension.",
+        learningOutcomes: "Make learning outcomes more specific, measurable, and aligned with curriculum standards. Include outcomes that address different cognitive levels (remembering, understanding, applying, analyzing, evaluating, creating). Ensure outcomes are clearly communicated to students.",
+        activities: "Incorporate more hands-on, inquiry-based activities that promote active learning. Include collaborative group work that encourages peer discussion and knowledge sharing. Add activities that cater to different learning styles and abilities.",
+        assessment: "Include a variety of assessment types beyond multiple-choice questions. Add formative assessments throughout the lesson to check for understanding. Create rubrics for evaluating student work that align with learning outcomes.",
+        realWorldRelevance: "Connect the topic to current events or issues that students can relate to. Include examples from different cultural contexts to make the content more inclusive. Show how the knowledge can be applied to solve real-world problems.",
+        differentiation: "Provide options for visual, auditory, and kinesthetic learners. Create tiered assignments that allow students to work at their appropriate challenge level. Offer choice in how students demonstrate their learning.",
+        technologyIntegration: "Incorporate educational apps or online tools that enhance the learning experience. Use digital collaboration tools to facilitate group work. Consider using multimedia resources to explain complex concepts."
+      };
+    }
+  }
+
+  /**
+   * Generate homework assignments based on lesson content
+   */
+  async generateHomework(params) {
+    const { 
+      topic, 
+      subject, 
+      gradeLevel, 
+      explanation, 
+      learningOutcomes, 
+      questionTypes = ['mcq', 'short_answer', 'diagram', 'creative'],
+      numberOfQuestions = 10,
+      difficulty = 'medium'
+    } = params;
+    
+    const prompt = `
+      As an expert educator, create a comprehensive homework assignment for grade ${gradeLevel} students about "${topic}" in the subject of ${subject}.
+      
+      ${explanation ? `Use this explanation as context: ${explanation.substring(0, 500)}...` : ''}
+      
+      ${learningOutcomes && learningOutcomes.length > 0 ? `Learning outcomes: ${learningOutcomes.join(', ')}` : ''}
+      
+      Create a homework assignment with ${numberOfQuestions} questions of difficulty level ${difficulty}.
+      
+      Include a mix of the following question types:
+      ${questionTypes.includes('mcq') ? '- Multiple-choice questions (MCQs) with 4 options each and one correct answer' : ''}
+      ${questionTypes.includes('short_answer') ? '- Short answer questions that require brief written responses' : ''}
+      ${questionTypes.includes('diagram') ? '- Diagram-based questions that involve labeling, drawing, or interpreting visual information' : ''}
+      ${questionTypes.includes('creative') ? '- Creative prompts that encourage critical thinking and application of knowledge' : ''}
+      
+      For each question:
+      1. Provide clear instructions
+      2. For MCQs, include 4 options (A, B, C, D) and indicate the correct answer
+      3. For all questions, provide a brief explanation or rubric for grading
+      
+      Format the response as a JSON object with the following structure:
+      {
+        "title": "Homework assignment title",
+        "description": "Brief description of the homework assignment",
+        "questions": [
+          {
+            "question": "Question text",
+            "type": "mcq/short_answer/diagram/creative",
+            "options": ["Option A", "Option B", "Option C", "Option D"], // For MCQs only
+            "answer": "Correct answer or grading criteria",
+            "explanation": "Explanation or grading rubric",
+            "points": 5 // Point value for this question
+          }
+        ],
+        "totalPoints": 50 // Sum of all question points
+      }
+    `;
+    
+    try {
+      const client = this.getClient();
+      const response = await client.post('/chat/completions', {
+        model: this.model,
+        messages: [
+          { role: 'system', content: 'You are an expert educator specializing in creating effective homework assignments. Design clear, engaging, and pedagogically sound homework that reinforces learning objectives and assesses student understanding.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+        response_format: { type: 'json_object' }
+      });
+      
+      const content = this.parseResponse(response.data);
+      
+      try {
+        // Parse the JSON content
+        const parsedContent = JSON.parse(content);
+        console.log('Successfully parsed homework JSON response');
+        return parsedContent;
+      } catch (error) {
+        console.error('Error parsing JSON homework response:', error);
+        console.log('Raw content:', content);
+        
+        // If parsing fails, return a structured error response
+        return {
+          title: `${topic} Homework Assignment`,
+          description: `Homework assignment for ${topic} (Grade ${gradeLevel})`,
+          questions: [
+            {
+              question: `What is the main concept of ${topic}?`,
+              type: 'mcq',
+              options: ["Option A", "Option B", "Option C", "Option D"],
+              answer: "A",
+              explanation: "This is a placeholder question.",
+              points: 5
+            }
+          ],
+          totalPoints: 5
+        };
+      }
+    } catch (error) {
+      console.error('Error calling Groq API for homework generation:', error);
+      throw new Error('Failed to generate homework assignment');
     }
   }
 

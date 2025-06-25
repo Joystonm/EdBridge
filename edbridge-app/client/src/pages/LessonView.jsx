@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { FaDownload, FaShare, FaTrash, FaSpinner, FaCalendarAlt } from 'react-icons/fa';
+import { FaDownload, FaShare, FaTrash, FaSpinner, FaCalendarAlt, FaBook } from 'react-icons/fa';
 import Layout from '../components/Layout';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import LessonImprovement from '../components/LessonImprovement';
+import HomeworkGenerator from '../components/HomeworkGenerator';
+import HomeworkDisplay from '../components/HomeworkDisplay';
 
 const LessonView = () => {
   const { id } = useParams();
@@ -16,6 +18,8 @@ const LessonView = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeHomework, setActiveHomework] = useState(null);
+  const [homeworkGenerated, setHomeworkGenerated] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
   
@@ -398,6 +402,12 @@ const LessonView = () => {
               Quiz
             </button>
             <button 
+              className={`px-4 py-3 font-medium text-sm whitespace-nowrap ${activeTab === 'homework' ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-600 hover:text-gray-900'}`} 
+              onClick={() => setActiveTab('homework')}
+            >
+              Homework
+            </button>
+            <button 
               className={`px-4 py-3 font-medium text-sm whitespace-nowrap ${activeTab === 'resources' ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-600 hover:text-gray-900'}`} 
               onClick={() => setActiveTab('resources')}
             >
@@ -546,6 +556,72 @@ const LessonView = () => {
                   </div>
                 ) : (
                   <p className="text-gray-500 italic">No real-world examples available.</p>
+                )}
+              </div>
+            )}
+            
+            {activeTab === 'homework' && (
+              <div className="homework">
+                <h2 className="text-xl font-bold mb-4">Homework Assignments</h2>
+                
+                {activeHomework ? (
+                  <div>
+                    <button 
+                      onClick={() => setActiveHomework(null)}
+                      className="mb-4 text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                    >
+                      ← Back to all homework
+                    </button>
+                    <HomeworkDisplay 
+                      homework={activeHomework} 
+                      lessonTitle={lesson.title}
+                      lessonSubject={lesson.subject}
+                      lessonGrade={lesson.gradeLevel}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    {lesson.homework && lesson.homework.length > 0 ? (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold mb-3">Existing Assignments</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {lesson.homework.map((hw, index) => (
+                            <div key={index} className="border rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow">
+                              <div className="p-4">
+                                <h4 className="font-medium mb-1">{hw.title}</h4>
+                                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{hw.description}</p>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                    {hw.questions.length} questions • {hw.totalPoints} points
+                                  </span>
+                                  <button 
+                                    onClick={() => setActiveHomework(hw)}
+                                    className="text-sm text-blue-600 hover:text-blue-800"
+                                  >
+                                    View Details →
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : homeworkGenerated ? (
+                      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <p className="text-yellow-700">
+                          Homework has been generated! Refresh the page to see it in your list.
+                        </p>
+                      </div>
+                    ) : null}
+                    
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-3">Generate New Homework</h3>
+                      <HomeworkGenerator 
+                        lessonId={id} 
+                        onHomeworkGenerated={() => setHomeworkGenerated(true)} 
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             )}
